@@ -865,9 +865,6 @@
     margin-bottom: 1.5rem;
     font-size: 1.4rem;
 }
-    margin-top: 1.5rem;
-    border-left: 4px solid var(--success);
-}
 
 .suggestions-section h4 {
     color: var(--dark);

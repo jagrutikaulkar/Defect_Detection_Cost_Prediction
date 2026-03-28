@@ -159,6 +159,7 @@ body {
 .gradient {
     background: linear-gradient(135deg, var(--primary), var(--secondary));
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -210,6 +211,7 @@ body {
     font-size: 2.8rem;
     background: linear-gradient(135deg, var(--primary-light), var(--secondary));
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 1rem;
     display: block;
