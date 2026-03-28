@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - Industrial Quality Control</title>
+    <!-- Immediate authentication check -->
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'index.html';
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <i class="fas fa-industry"></i>
+                <span>Ind<span class="highlight">AI</span>Tech</span>
+            </div>
+            
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="dashboard.html">Dashboard</a>
+                <a href="defect-detection.html">Defect Detection</a>
+                <a href="cost-prediction.html">Cost Prediction</a>
+            </div>
+            
+            <div class="nav-auth">
+                <button class="btn-logout" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Dashboard Container -->
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <a href="dashboard.html">
+                <i class="fas fa-chart-line"></i> Dashboard
+            </a>
+            <a href="defect-detection.html">
+                <i class="fas fa-camera"></i> Defect Detection
+            </a>
+            <a href="cost-prediction.html">
+                <i class="fas fa-calculator"></i> Cost Prediction
+            </a>
+            <a href="analytics.html" class="active">
+                <i class="fas fa-chart-pie"></i> Analytics
+            </a>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <h1>Analytics</h1>
+            
+            <!-- Charts Grid -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>Defect Distribution</h3>
+                    <canvas id="defectChart"></canvas>
+                </div>
+                
+                <div class="chart-card">
+                    <h3>Severity Distribution</h3>
+                    <canvas id="severityChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Statistics -->
+            <div class="stats-section">
+                <h3>Overall Statistics</h3>
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-icon">
+                            <i class="fas fa-image"></i>
+                        </div>
+                        <div>
+                            <div class="kpi-label">Total Detections</div>
+                            <div class="kpi-value" id="totalStats">0</div>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card">
+                        <div class="kpi-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div>
+                            <div class="kpi-label">Avg Confidence</div>
+                            <div class="kpi-value" id="avgConfidenceStats">0%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/main.js"></script>
+    <script src="js/analytics.js"></script>
+</body>
+</html>

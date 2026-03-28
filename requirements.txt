@@ -1,0 +1,3 @@
+# Root Requirements
+# Install backend requirements with:
+# pip install -r backend/requirements.txt

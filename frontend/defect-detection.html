@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Defect Detection - Industrial Quality Control</title>
+    <!-- Immediate authentication check -->
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'index.html';
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <i class="fas fa-industry"></i>
+                <span>Ind<span class="highlight">AI</span>Tech</span>
+            </div>
+            
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="dashboard.html">Dashboard</a>
+                <a href="defect-detection.html" class="active">Defect Detection</a>
+                <a href="cost-prediction.html">Cost Prediction</a>
+            </div>
+            
+            <div class="nav-auth">
+                <button class="btn-logout" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Dashboard Container -->
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <a href="dashboard.html">
+                <i class="fas fa-chart-line"></i> Dashboard
+            </a>
+            <a href="defect-detection.html" class="active">
+                <i class="fas fa-camera"></i> Defect Detection
+            </a>
+            <a href="cost-prediction.html">
+                <i class="fas fa-calculator"></i> Cost Prediction
+            </a>
+            <a href="analytics.html">
+                <i class="fas fa-chart-pie"></i> Analytics
+            </a>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <h1>Defect Detection</h1>
+            
+            <!-- Upload Section -->
+            <div class="upload-section">
+                <div class="upload-box">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h3>Upload Steel Surface Image</h3>
+                    <p>Drag and drop or click to upload</p>
+                    <input type="file" id="imageInput" accept="image/*" hidden>
+                    <button class="btn-primary" onclick="document.getElementById('imageInput').click()">
+                        <i class="fas fa-plus"></i> Select Image
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Production Parameters Section -->
+            <div class="parameters-section">
+                <h3>Production Parameters</h3>
+                <p class="section-description">Enter production parameters to get accurate cost estimation</p>
+                <div class="parameters-grid">
+                    <div class="param-group">
+                        <label for="machineTime">Machine Time (hours)</label>
+                        <input type="number" id="machineTime" min="0.5" max="10" step="0.5" value="2.0" placeholder="Hours">
+                        <small>Time on production line</small>
+                    </div>
+                    <div class="param-group">
+                        <label for="laborCost">Labor Cost (₹/hour)</label>
+                        <input type="number" id="laborCost" min="50" max="1000" step="50" value="300" placeholder="Hourly rate">
+                        <small>Worker hourly wage</small>
+                    </div>
+                    <div class="param-group">
+                        <label for="materialCost">Material Cost (₹)</label>
+                        <input type="number" id="materialCost" min="50" max="2000" step="50" value="200" placeholder="Material cost">
+                        <small>Raw material cost per unit</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Results Section -->
+            <div id="resultsSection" class="results-section" style="display: none;">
+                <h3>Detection Results</h3>
+                
+                <div class="detections-grid">
+                    <div class="result-card">
+                        <div class="result-header">
+                            <span class="label">Detected Defect</span>
+                            <span class="defect-badge" id="defectType">-</span>
+                        </div>
+                        <div class="result-body">
+                            <div class="result-item">
+                                <span class="label">Confidence</span>
+                                <span class="value" id="confidence">0%</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="label">Severity</span>
+                                <span class="value" id="severity">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="label">Defect Area</span>
+                                <span class="value" id="defectArea">0%</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="label">Estimated Cost</span>
+                                <span class="value cost-value" id="predictedCost">₹0</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="label">Processing Time</span>
+                                <span class="value" id="processingTime">0ms</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <div class="result-header">
+                            <span class="label">Confidence Breakdown</span>
+                        </div>
+                        <div id="probabilitiesContainer"></div>
+                    </div>
+                </div>
+                
+                <!-- Preview Image -->
+                <div class="preview-section">
+                    <h4>Image Preview</h4>
+                    <img id="previewImage" src="" alt="Preview" class="preview-img">
+                </div>
+            </div>
+            
+            <!-- Detection History -->
+            <div class="history-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3>Detection History</h3>
+                    <button onclick="deleteDetectionHistory()" class="delete-btn" style="background: #ef4444; color: white; padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                        <i class="fas fa-trash"></i> Delete All
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Defect Type</th>
+                                <th>Confidence</th>
+                                <th>Severity</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTable">
+                            <tr><td colspan="4">No detections yet</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/main.js"></script>
+    <script src="js/defect-detection.js"></script>
+</body>
+</html>

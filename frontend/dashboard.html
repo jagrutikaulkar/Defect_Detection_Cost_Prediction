@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Industrial Quality Control</title>
+    <!-- Immediate authentication check -->
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'index.html';
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <i class="fas fa-industry"></i>
+                <span>Ind<span class="highlight">AI</span>Tech</span>
+            </div>
+            
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="dashboard.html" class="active">Dashboard</a>
+                <a href="defect-detection.html">Defect Detection</a>
+                <a href="cost-prediction.html">Cost Prediction</a>
+            </div>
+            
+            <div class="nav-auth">
+                <button class="btn-logout" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Dashboard Container -->
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <a href="dashboard.html" class="active">
+                <i class="fas fa-chart-line"></i> Dashboard
+            </a>
+            <a href="defect-detection.html">
+                <i class="fas fa-camera"></i> Defect Detection
+            </a>
+            <a href="cost-prediction.html">
+                <i class="fas fa-calculator"></i> Cost Prediction
+            </a>
+            <a href="analytics.html">
+                <i class="fas fa-chart-pie"></i> Analytics
+            </a>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <h1>Welcome to Your Quality Control Dashboard</h1>
+            <p class="dashboard-intro">Get started by uploading your first image for defect detection and cost analysis.</p>
+            
+            <!-- Welcome Section for New Users -->
+            <div id="welcomeSection" class="welcome-section">
+                <div class="welcome-card">
+                    <div class="welcome-icon">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
+                    <h2>Get Started in 3 Steps</h2>
+                    <div class="steps">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h4>Upload Image</h4>
+                                <p>Take a photo of your steel surface</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h4>Set Parameters</h4>
+                                <p>Tell us about your production line</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h4>Get Results</h4>
+                                <p>See defects and costs instantly</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn-primary" onclick="location.href='defect-detection.html'">
+                        <i class="fas fa-camera"></i> Start Analyzing
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="quick-actions-section">
+                <h2>Quick Access</h2>
+                <div class="quick-actions-grid">
+                    <div class="action-card" onclick="location.href='defect-detection.html'">
+                        <i class="fas fa-microscope"></i>
+                        <h4>Defect Detection</h4>
+                        <p>Upload image & detect defects</p>
+                    </div>
+                    <div class="action-card" onclick="location.href='cost-prediction.html'">
+                        <i class="fas fa-coins"></i>
+                        <h4>Cost Prediction</h4>
+                        <p>Calculate production costs</p>
+                    </div>
+                    <div class="action-card" onclick="location.href='analytics.html'">
+                        <i class="fas fa-chart-pie"></i>
+                        <h4>Analytics</h4>
+                        <p>View trends & insights</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h5>IndAITech</h5>
+                <p>AI-powered quality control for modern manufacturing</p>
+            </div>
+            <div class="footer-section">
+                <h5>Features</h5>
+                <ul>
+                    <li><a href="defect-detection.html">Defect Detection</a></li>
+                    <li><a href="cost-prediction.html">Cost Prediction</a></li>
+                    <li><a href="analytics.html">Analytics</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h5>Technology</h5>
+                <ul>
+                    <li>CNN (MobileNetV2) - 98%+ accuracy</li>
+                    <li>RandomForest - Cost prediction</li>
+                    <li>Flask + TensorFlow Backend</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 IndAITech. All rights reserved. | Industrial Quality Control System v1.0</p>
+        </div>
+    </footer>
+    
+    <script src="js/main.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

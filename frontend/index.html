@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Industrial Quality Control System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <i class="fas fa-industry"></i>
+                <span>Ind<span class="highlight">AI</span>Tech</span>
+            </div>
+            
+            <div class="nav-links">
+                <a href="index.html" class="active">Home</a>
+                <a href="javascript:navigateToPage('dashboard.html')">Dashboard</a>
+                <a href="javascript:navigateToPage('defect-detection.html')">Defect Detection</a>
+                <a href="javascript:navigateToPage('cost-prediction.html')">Cost Prediction</a>
+            </div>
+            
+            <div class="nav-auth">
+                <button class="btn-login" onclick="showLogin()">Login</button>
+                <button class="btn-register" onclick="showRegister()">Register</button>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Keep Your <span class="gradient">Production Quality</span> Perfect</h1>
+            <p>Instantly detect surface defects and get accurate production cost estimates. Make smarter quality control decisions in seconds.</p>
+            
+            <div class="benefit-highlights">
+                <div class="benefit">
+                    <i class="fas fa-bolt"></i>
+                    <h4>Instant Results</h4>
+                    <p>Upload and get results in seconds</p>
+                </div>
+                <div class="benefit">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <h4>Cost Visibility</h4>
+                    <p>Understand your exact production costs</p>
+                </div>
+                <div class="benefit">
+                    <i class="fas fa-shield-alt"></i>
+                    <h4>Quality Assurance</h4>
+                    <p>Never miss defects again</p>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <button class="btn-primary" onclick="showLogin()">
+                    Start Now <i class="fas fa-arrow-right"></i>
+                </button>
+                <button class="btn-secondary" onclick="scrollToFeatures()">
+                    See How It Works <i class="fas fa-play"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="hero-image">
+            <svg class="hero-visual" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+                <!-- Steel surface background -->
+                <rect width="400" height="300" fill="#e8e8e8"/>
+                
+                <!-- Surface grid pattern -->
+                <defs>
+                    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                        <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#d0d0d0" stroke-width="0.5"/>
+                    </pattern>
+                </defs>
+                <rect width="400" height="300" fill="url(#grid)"/>
+                
+                <!-- Normal surface area -->
+                <rect x="30" y="30" width="200" height="240" fill="#f0f0f0" stroke="#cccccc" stroke-width="1"/>
+                
+                <!-- Detected defect area (scratch) -->
+                <g opacity="0.9">
+                    <rect x="150" y="100" width="120" height="15" fill="#ff6b6b" opacity="0.8"/>
+                    <path d="M 150 107 Q 165 105 210 108" stroke="#ff3333" stroke-width="2" fill="none"/>
+                    <path d="M 155 110 Q 180 108 215 111" stroke="#ff6b6b" stroke-width="1.5" fill="none" opacity="0.6"/>
+                </g>
+                
+                <!-- Defect highlight ring -->
+                <circle cx="180" cy="107" r="65" fill="none" stroke="#ff6b6b" stroke-width="2" stroke-dasharray="5,5" opacity="0.7"/>
+                
+                <!-- Detection indicator -->
+                <g>
+                    <circle cx="290" cy="80" r="35" fill="#1e40af" opacity="0.15"/>
+                    <circle cx="290" cy="80" r="35" fill="none" stroke="#1e40af" stroke-width="2"/>
+                    <circle cx="290" cy="80" r="30" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.8"/>
+                </g>
+                
+                <!-- Checkmark in circle -->
+                <g transform="translate(290, 80)">
+                    <circle r="18" fill="#059669"/>
+                    <path d="M -8 0 L -2 6 L 8 -4" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+                
+                <!-- Status label -->
+                <rect x="250" y="140" width="130" height="40" rx="6" fill="white" stroke="#1e40af" stroke-width="1.5" box-shadow="0 2px 8px rgba(0,0,0,0.1)"/>
+                <text x="265" y="160" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#1e40af">Defect Detected</text>
+                <text x="270" y="176" font-family="Arial, sans-serif" font-size="11" fill="#3b82f6">99.2% Confidence</text>
+                
+                <!-- Cost indicator -->
+                <rect x="250" y="200" width="130" height="35" rx="6" fill="#f9fafb" stroke="#e5e7eb" stroke-width="1.5"/>
+                <text x="265" y="217" font-family="Arial, sans-serif" font-size="11" fill="#6b7280">Estimated Cost</text>
+                <text x="275" y="230" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#059669">₹1,447</text>
+            </svg>
+            
+            <div class="floating-card">
+                <i class="fas fa-check-circle"></i>
+                <span>Defect Detected</span>
+                <span class="status">Immediate Action Needed</span>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Features -->
+    <section id="features" class="features">
+        <h2>Everything You Need for Quality Control</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <i class="fas fa-image"></i>
+                <h3>Upload & Analyze</h3>
+                <p>Simply upload a photo of your product and get instant analysis</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-rupee-sign"></i>
+                <h3>Calculate Costs</h3>
+                <p>Enter your production parameters and see exactly how much defects cost</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-history"></i>
+                <h3>Track History</h3>
+                <p>Keep records of all detections and analyze trends over time</p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <button class="close" onclick="closeLogin()">×</button>
+            <h2><i class="fas fa-sign-in-alt"></i> Login</h2>
+            <form onsubmit="handleLogin(event)">
+                <input type="text" placeholder="Username" id="loginUsername" required>
+                <input type="password" placeholder="Password" id="loginPassword" required>
+                <button type="submit" class="btn-primary">Login</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Register Modal -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <button class="close" onclick="closeRegister()">×</button>
+            <h2><i class="fas fa-user-plus"></i> Register</h2>
+            <form onsubmit="handleRegister(event)">
+                <input type="text" placeholder="Username" id="regUsername" required>
+                <input type="email" placeholder="Email" id="regEmail" required>
+                <input type="password" placeholder="Password" id="regPassword" required>
+                <button type="submit" class="btn-primary">Create Account</button>
+            </form>
+        </div>
+    </div>
+    
+    <script src="js/main.js"></script>
+</body>
+</html>

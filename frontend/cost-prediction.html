@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cost Prediction - Industrial Quality Control</title>
+    <!-- Immediate authentication check -->
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'index.html';
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <i class="fas fa-industry"></i>
+                <span>Ind<span class="highlight">AI</span>Tech</span>
+            </div>
+            
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="dashboard.html">Dashboard</a>
+                <a href="defect-detection.html">Defect Detection</a>
+                <a href="cost-prediction.html" class="active">Cost Prediction</a>
+            </div>
+            
+            <div class="nav-auth">
+                <button class="btn-logout" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Dashboard Container -->
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <a href="dashboard.html">
+                <i class="fas fa-chart-line"></i> Dashboard
+            </a>
+            <a href="defect-detection.html">
+                <i class="fas fa-camera"></i> Defect Detection
+            </a>
+            <a href="cost-prediction.html" class="active">
+                <i class="fas fa-calculator"></i> Cost Prediction
+            </a>
+            <a href="analytics.html">
+                <i class="fas fa-chart-pie"></i> Analytics
+            </a>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <h1>Cost Prediction</h1>
+            
+            <!-- Input Form -->
+            <div class="form-section">
+                <h3>Enter Production Parameters</h3>
+                <form id="costForm" onsubmit="handleCostPrediction(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="materialCost">Material Cost (₹)</label>
+                            <input type="number" id="materialCost" placeholder="e.g., 500" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="laborCost">Labor Cost (₹)</label>
+                            <input type="number" id="laborCost" placeholder="e.g., 200" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="machineTime">Machine Time (hours)</label>
+                            <input type="number" id="machineTime" placeholder="e.g., 5" step="0.1" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="energyConsumption">Energy Consumption (kWh)</label>
+                            <input type="number" id="energyConsumption" placeholder="e.g., 100" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="defectRate">Defect Rate (%)</label>
+                            <input type="number" id="defectRate" placeholder="e.g., 2.5" step="0.1" required>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-calculator"></i> Predict Cost
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Results Section -->
+            <div id="costResultsSection" class="results-section" style="display: none;">
+                <h3>Prediction Results</h3>
+                
+                <div class="cost-result-card">
+                    <div class="cost-highlight">
+                        <h4>Predicted Total Cost</h4>
+                        <div class="cost-value">₹<span id="predictedCost">0</span></div>
+                    </div>
+                    
+                    <div class="cost-breakdown">
+                        <h4>Cost Breakdown</h4>
+                        <div id="breakdownContainer"></div>
+                    </div>
+                    
+                    <div class="confidence-interval">
+                        <h4>Confidence Interval (95%)</h4>
+                        <p>Lower: ₹<span id="lowerBound">0</span></p>
+                        <p>Upper: ₹<span id="upperBound">0</span></p>
+                    </div>
+                </div>
+                
+                <!-- Suggestions -->
+                <div class="suggestions-section">
+                    <h4>Optimization Suggestions</h4>
+                    <div id="suggestionsContainer"></div>
+                </div>
+            </div>
+            
+            <!-- Prediction History -->
+            <div class="history-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3>Prediction History</h3>
+                    <button onclick="deleteCostHistory()" class="delete-btn" style="background: #ef4444; color: white; padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                        <i class="fas fa-trash"></i> Delete All
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Material Cost</th>
+                                <th>Labor Cost</th>
+                                <th>Predicted Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody id="costHistoryTable">
+                            <tr><td colspan="4">No predictions yet</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/main.js"></script>
+    <script src="js/cost-prediction.js"></script>
+</body>
+</html>
