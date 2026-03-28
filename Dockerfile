@@ -1,7 +1,12 @@
 FROM python:3.11-slim
 
-# Install system dependencies for OpenCV and other libraries
-RUN apt-get update && apt-get install -y \
+# Install system dependencies for OpenCV, TensorFlow, and other libraries
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libatlas-base-dev \
+    libblas-dev \
+    liblapack-dev \
+    gfortran \
     libxcb1 \
     libx11-6 \
     libsm6 \
@@ -15,19 +20,28 @@ RUN apt-get update && apt-get install -y \
     libavcodec-dev \
     libavformat-dev \
     libswscale-dev \
+    libjasper-dev \
+    libtiff-dev \
+    libjpeg-dev \
+    libpng-dev \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # Copy and install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
 
 # Expose port
 EXPOSE 5000
+
+# Set environment variables
+ENV TF_ENABLE_ONEDNN_OPTS=0
 
 # Run the app
 CMD ["python", "app.py"]
