@@ -677,7 +677,8 @@ if __name__ == '__main__':
     print()
     
     print("=" * 60)
-    print("Flask server running on http://localhost:5000")
+    port = int(os.environ.get('PORT', 5000))
+    print(f"Flask server running on 0.0.0.0:{port}")
     print("\nEndpoints:")
     print("  GET  /                - Frontend")
     print("  POST /api/predict     - Predict defect from image")
@@ -685,4 +686,4 @@ if __name__ == '__main__':
     print("  GET  /api/models      - Check if models loaded")
     print("=" * 60)
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=False, host='0.0.0.0', port=port)
