@@ -658,11 +658,21 @@ if __name__ == '__main__':
     print("=" * 60)
     print("Starting Defect Detection Backend")
     print("=" * 60)
-    print("Starting Defect Detection Backend")
-    print("=" * 60)
+    
+    # Startup diagnostics
+    print(f"\n[DIR] Current working directory: {os.getcwd()}")
+    print(f"[DIR] Script directory: {os.path.dirname(os.path.abspath(__file__))}")
+    print(f"[DIR] Models directory check:")
+    models_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models')
+    if os.path.exists(models_path):
+        print(f"   [OK] {models_path} exists")
+        print(f"   Files: {os.listdir(models_path)}")
+    else:
+        print(f"   [ERR] {models_path} NOT FOUND")
+    print()
     
     # Initialize models on startup
-    print("\nLoading ML models...")
+    print("Loading ML models...")
     predictor = get_predictor()
     print()
     

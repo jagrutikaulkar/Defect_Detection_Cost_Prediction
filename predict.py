@@ -8,7 +8,12 @@ import joblib
 import numpy as np
 import cv2
 import os
+from pathlib import Path
 from preprocess import preprocess_image
+
+# Get the absolute path to the models directory
+BASE_DIR = Path(__file__).parent.resolve()
+MODELS_DIR = BASE_DIR / 'models'
 
 # Defect classes
 DEFECT_CLASSES = [
@@ -30,14 +35,17 @@ class Predictor:
     def load_models(self):
         """Load pre-trained models"""
         
+        defect_model_path = MODELS_DIR / "defect_model.h5"
+        cost_model_path = MODELS_DIR / "cost_model.pkl"
+        
         # Load CNN model for defect detection
         try:
-            if os.path.exists("models/defect_model.h5"):
-                print("✓ Loading defect detection model...")
-                self.cnn_model = tf.keras.models.load_model("models/defect_model.h5")
+            if defect_model_path.exists():
+                print(f"✓ Loading defect detection model from {defect_model_path}...")
+                self.cnn_model = tf.keras.models.load_model(str(defect_model_path))
                 print("✓ Defect model loaded successfully")
             else:
-                print("❌ Defect model not found at models/defect_model.h5")
+                print(f"❌ Defect model not found at {defect_model_path}")
                 self.cnn_model = None
         except Exception as e:
             print(f"❌ Error loading defect model: {str(e)}")
@@ -45,12 +53,12 @@ class Predictor:
         
         # Load cost regression model
         try:
-            if os.path.exists("models/cost_model.pkl"):
-                print("✓ Loading cost prediction model...")
-                self.cost_model = joblib.load("models/cost_model.pkl")
+            if cost_model_path.exists():
+                print(f"✓ Loading cost prediction model from {cost_model_path}...")
+                self.cost_model = joblib.load(str(cost_model_path))
                 print("✓ Cost model loaded successfully")
             else:
-                print("❌ Cost model not found at models/cost_model.pkl")
+                print(f"❌ Cost model not found at {cost_model_path}")
                 self.cost_model = None
         except Exception as e:
             print(f"❌ Error loading cost model: {str(e)}")
