@@ -58,10 +58,10 @@ data/datasets/NEU-DET/IMAGES/*
 reports/*
 !reports/.gitkeep
 
-# Models
-*.h5
-*.pkl
-*.joblib
+# Models (except trained production models)
+# *.h5         - COMMENTED: Need to commit production models for Railway
+# *.pkl        - COMMENTED: Need to commit production models for Railway
+# *.joblib     - COMMENTED: Need to commit production models for Railway
 *.pth
 
 # OS
