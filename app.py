@@ -658,6 +658,15 @@ if __name__ == '__main__':
     print("=" * 60)
     print("Starting Defect Detection Backend")
     print("=" * 60)
+    print("Starting Defect Detection Backend")
+    print("=" * 60)
+    
+    # Initialize models on startup
+    print("\nLoading ML models...")
+    predictor = get_predictor()
+    print()
+    
+    print("=" * 60)
     print("Flask server running on http://localhost:5000")
     print("\nEndpoints:")
     print("  GET  /                - Frontend")

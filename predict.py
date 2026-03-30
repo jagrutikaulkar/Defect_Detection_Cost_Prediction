@@ -31,20 +31,40 @@ class Predictor:
         """Load pre-trained models"""
         
         # Load CNN model for defect detection
-        if os.path.exists("models/defect_model.h5"):
-            print("✓ Loading defect detection model...")
-            self.cnn_model = tf.keras.models.load_model("models/defect_model.h5")
-        else:
-            print("❌ Defect model not found at models/defect_model.h5")
-            print("   Run: python train_defect_model.py")
+        try:
+            if os.path.exists("models/defect_model.h5"):
+                print("✓ Loading defect detection model...")
+                self.cnn_model = tf.keras.models.load_model("models/defect_model.h5")
+                print("✓ Defect model loaded successfully")
+            else:
+                print("❌ Defect model not found at models/defect_model.h5")
+                self.cnn_model = None
+        except Exception as e:
+            print(f"❌ Error loading defect model: {str(e)}")
+            self.cnn_model = None
         
         # Load cost regression model
-        if os.path.exists("models/cost_model.pkl"):
-            print("✓ Loading cost prediction model...")
-            self.cost_model = joblib.load("models/cost_model.pkl")
+        try:
+            if os.path.exists("models/cost_model.pkl"):
+                print("✓ Loading cost prediction model...")
+                self.cost_model = joblib.load("models/cost_model.pkl")
+                print("✓ Cost model loaded successfully")
+            else:
+                print("❌ Cost model not found at models/cost_model.pkl")
+                self.cost_model = None
+        except Exception as e:
+            print(f"❌ Error loading cost model: {str(e)}")
+            self.cost_model = None
+        
+        # Report final status
+        if self.cnn_model and self.cost_model:
+            print("=" * 50)
+            print("✓ Both models loaded successfully!")
+            print("=" * 50)
         else:
-            print("❌ Cost model not found at models/cost_model.pkl")
-            print("   Run: python train_cost_model.py")
+            print("=" * 50)
+            print("❌ WARNING: Some models failed to load!")
+            print("=" * 50)
     
     def predict(self, image_path, machine_time=2.0, labor_cost=300.0, material_cost=200.0):
         """
