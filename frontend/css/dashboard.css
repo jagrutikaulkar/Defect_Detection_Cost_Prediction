@@ -897,22 +897,10 @@
     margin: 2rem 0;
 }
 
-/* Responsive */
-@media (max-width: 1024px) {
-    .sidebar {
-        width: 200px;
-    }
-    
-    .main-content {
-        margin-left: 200px;
-    }
-    
-    .charts-grid {
-        grid-template-columns: 1fr;
-    }
-}
+/* Responsive Design */
 
-@media (max-width: 768px) {
+/* Mobile - 360px to 480px */
+@media (max-width: 480px) {
     .dashboard-container {
         flex-direction: column;
     }
@@ -921,26 +909,257 @@
         width: 100%;
         height: auto;
         position: static;
-        padding: 1rem;
+        padding: 0.8rem 0;
         display: flex;
         overflow-x: auto;
+        border-right: none;
+        border-bottom: 2px solid #3b82f6;
     }
     
     .sidebar a {
         white-space: nowrap;
-        flex: 1;
+        flex-shrink: 0;
+        padding: 0.8rem 1rem;
+        font-size: 0.85rem;
+    }
+    
+    .sidebar a i {
+        font-size: 1rem;
     }
     
     .main-content {
         margin-left: 0;
-        padding: 1rem;
+        padding: 1rem 0.8rem;
+        max-width: 100%;
+    }
+    
+    .main-content h1 {
+        font-size: 1.5rem;
+    }
+    
+    .main-content h3 {
+        font-size: 1rem;
     }
     
     .kpi-grid {
         grid-template-columns: 1fr;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .kpi-card {
+        padding: 1rem;
+        gap: 0.8rem;
+    }
+    
+    .kpi-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.4rem;
+    }
+    
+    .charts-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .chart-card {
+        padding: 1rem;
+    }
+    
+    .chart-card canvas {
+        max-height: 250px;
+    }
+    
+    .parameters-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .param-group input {
+        padding: 0.6rem;
+        font-size: 0.9rem;
+    }
+    
+    .detections-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .result-card {
+        padding: 1rem;
+    }
+    
+    .data-table {
+        font-size: 0.85rem;
+    }
+    
+    .data-table th,
+    .data-table td {
+        padding: 0.8rem 0.5rem;
     }
     
     .form-grid {
         grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .footer {
+        margin-left: 0;
+        padding: 2rem 1rem;
+    }
+    
+    .footer-content {
+        gap: 1.5rem;
+    }
+}
+
+/* Tablet - 481px to 768px */
+@media (min-width: 481px) and (max-width: 768px) {
+    .dashboard-container {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+        padding: 1rem 0;
+        display: flex;
+        overflow-x: auto;
+        border-right: none;
+        border-bottom: 3px solid #3b82f6;
+    }
+    
+    .sidebar a {
+        white-space: nowrap;
+        flex-shrink: 0;
+        padding: 1rem 1.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .main-content {
+        margin-left: 0;
+        padding: 2rem 1.5rem;
+        max-width: 100%;
+    }
+    
+    .main-content h1 {
+        font-size: 2rem;
+    }
+    
+    .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+    
+    .charts-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .chart-card canvas {
+        max-height: 280px;
+    }
+    
+    .parameters-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.2rem;
+    }
+    
+    .detections-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .form-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+    
+    .data-table th,
+    .data-table td {
+        padding: 1rem 0.8rem;
+        font-size: 0.9rem;
+    }
+    
+    .footer {
+        margin-left: 0;
+        padding: 2.5rem 1.5rem;
+    }
+    
+    .footer-content {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+    }
+}
+
+/* Laptop - 769px to 1024px */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .sidebar {
+        width: 220px;
+    }
+    
+    .main-content {
+        margin-left: 220px;
+        padding: 2.5rem 2rem;
+    }
+    
+    .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+    
+    .charts-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .parameters-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.2rem;
+    }
+    
+    .detections-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+}
+
+/* Large Screens - 1025px and up */
+@media (min-width: 1025px) {
+    .sidebar {
+        width: 260px;
+    }
+    
+    .main-content {
+        margin-left: 260px;
+        padding: 3rem 2.5rem;
+    }
+    
+    .kpi-grid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+    
+    .charts-grid {
+        grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+    }
+}
+
+/* Ultra Wide Screens - 1440px and up */
+@media (min-width: 1440px) {
+    .main-content {
+        max-width: 1600px;
+        margin: 0 auto;
+        margin-left: 260px;
+    }
+    
+    .kpi-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .charts-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
