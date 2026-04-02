@@ -150,6 +150,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const registerBtn = authButtons.querySelector('.btn-register');
             if (loginBtn && registerBtn && !authButtons.querySelector('.btn-logout')) {
                 authButtons.innerHTML = `
+                    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark/light mode">
+                        <i class="fas fa-moon"></i>
+                    </button>
                     <button class="btn-logout" onclick="handleLogout()">
                         <i class="fas fa-sign-out-alt"></i> Logout
                     </button>
@@ -179,4 +182,57 @@ document.addEventListener('DOMContentLoaded', () => {
             event.target.style.display = 'none';
         }
     };
+    
+    // Initialize theme
+    initTheme();
 });
+
+/**
+ * Theme Toggle Functions
+ */
+
+// Initialize theme from localStorage or system preference
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    setTheme(savedTheme);
+}
+
+// Set theme
+function setTheme(theme) {
+    const html = document.documentElement;
+    const body = document.body;
+    
+    html.setAttribute('data-theme', theme);
+    html.setAttribute('data-bs-theme', theme);
+    body.setAttribute('data-bs-theme', theme);
+    
+    localStorage.setItem('theme', theme);
+    updateThemeIcon(theme);
+}
+
+// Toggle theme
+function toggleTheme() {
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+}
+
+// Update theme icon
+function updateThemeIcon(theme) {
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        const icon = themeToggle.querySelector('i');
+        if (icon) {
+            icon.className = theme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
+        }
+    }
+}
+
+// Listen for system theme changes
+if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (!localStorage.getItem('theme')) {
+            setTheme(e.matches ? 'dark' : 'light');
+        }
+    });
+}

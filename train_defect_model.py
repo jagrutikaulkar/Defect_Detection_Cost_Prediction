@@ -19,8 +19,8 @@ IMG_SIZE = 224
 BATCH_SIZE = 32
 EPOCHS = 15
 
-# Defect classes
-CLASSES = ['crazing', 'inclusion', 'patches', 'pitted_surface', 'rolled-in_scale', 'scratches']
+# Defect classes (including normal for clean steel)
+CLASSES = ['crazing', 'inclusion', 'patches', 'pitted_surface', 'rolled-in_scale', 'scratches', 'normal']
 
 def train_model():
     """Train the defect detection model"""
@@ -39,7 +39,8 @@ def train_model():
         print("  ├─ patches/")
         print("  ├─ pitted_surface/")
         print("  ├─ rolled-in_scale/")
-        print("  └─ scratches/")
+        print("  ├─ scratches/")
+        print("  └─ normal/")
         return
     
     # Create models directory
@@ -93,7 +94,7 @@ def train_model():
     x = GlobalAveragePooling2D()(x)
     x = Dense(128, activation='relu')(x)
     x = Dropout(0.5)(x)
-    output = Dense(6, activation='softmax')(x)  # 6 defect classes
+    output = Dense(7, activation='softmax')(x)  # 7 classes: 6 defects + normal
     
     model = Model(inputs=base_model.input, outputs=output)
     

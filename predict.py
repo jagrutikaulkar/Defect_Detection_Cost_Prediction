@@ -15,14 +15,15 @@ from preprocess import preprocess_image
 BASE_DIR = Path(__file__).parent.resolve()
 MODELS_DIR = BASE_DIR / 'models'
 
-# Defect classes
+# Defect classes (7 classes: 6 defects + normal)
 DEFECT_CLASSES = [
     'crazing',
     'inclusion',
     'patches',
     'pitted_surface',
     'rolled-in_scale',
-    'scratches'
+    'scratches',
+    'normal'
 ]
 
 # Load models (global)
@@ -74,6 +75,51 @@ class Predictor:
             print("❌ WARNING: Some models failed to load!")
             print("=" * 50)
     
+    def detect_defect_region(self, image_path):
+        """
+        Detect bounding box of defect region using image processing
+        Returns list of bounding boxes: [x, y, w, h]
+        """
+        try:
+            raw_img = cv2.imread(image_path)
+            if raw_img is None:
+                return []
+            
+            # Resize to original size for analysis
+            h, w = raw_img.shape[:2]
+            
+            # Convert to grayscale and detect edges
+            gray = cv2.cvtColor(raw_img, cv2.COLOR_BGR2GRAY)
+            
+            # Apply adaptive thresholding for defect detection
+            thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                          cv2.THRESH_BINARY, 11, 2)
+            
+            # Find contours
+            contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            
+            bounding_boxes = []
+            for contour in contours:
+                area = cv2.contourArea(contour)
+                # Filter by area to avoid noise
+                if 100 < area < (w * h * 0.5):
+                    x, y, cw, ch = cv2.boundingRect(contour)
+                    # Normalize coordinates to percentage
+                    bounding_boxes.append({
+                        'x': round((x / w) * 100, 2),
+                        'y': round((y / h) * 100, 2),
+                        'width': round((cw / w) * 100, 2),
+                        'height': round((ch / h) * 100, 2),
+                        'pixel_x': int(x),
+                        'pixel_y': int(y),
+                        'pixel_width': int(cw),
+                        'pixel_height': int(ch)
+                    })
+            
+            return bounding_boxes[:5]  # Return top 5 bounding boxes
+        except:
+            return []
+    
     def predict(self, image_path, machine_time=2.0, labor_cost=300.0, material_cost=200.0):
         """
         End-to-end prediction with production parameters
@@ -85,7 +131,7 @@ class Predictor:
             material_cost: Material cost (₹)
         
         Returns:
-            Dictionary with defect_type, confidence, predicted_cost
+            Dictionary with defect_type, confidence, predicted_cost, bounding_boxes
         """
         
         if self.cnn_model is None or self.cost_model is None:
@@ -94,7 +140,8 @@ class Predictor:
                 'defect_type': None,
                 'confidence': 0,
                 'predicted_cost': 0,
-                'status': 'error'
+                'status': 'error',
+                'bounding_boxes': []
             }
         
         try:
@@ -107,6 +154,9 @@ class Predictor:
             defect_id = np.argmax(pred[0])
             defect_type = DEFECT_CLASSES[defect_id]
             confidence = float(pred[0][defect_id] * 100)
+            
+            # Detect bounding boxes for defect region
+            bounding_boxes = self.detect_defect_region(image_path)
             
             # Feature extraction for cost prediction
             raw_img = cv2.imread(image_path)
@@ -145,6 +195,7 @@ class Predictor:
                 'severity': ['low', 'medium', 'high'][severity - 1],
                 'defect_area': round(defect_area, 2),
                 'predicted_cost': round(predicted_cost, 2),
+                'bounding_boxes': bounding_boxes,
                 'all_predictions': {
                     DEFECT_CLASSES[i]: float(pred[0][i] * 100)
                     for i in range(len(DEFECT_CLASSES))
@@ -157,7 +208,8 @@ class Predictor:
                 'error': str(e),
                 'defect_type': None,
                 'confidence': 0,
-                'predicted_cost': 0
+                'predicted_cost': 0,
+                'bounding_boxes': []
             }
 
 # Global predictor instance
@@ -169,6 +221,9 @@ def get_predictor():
     if predictor is None:
         predictor = Predictor()
     return predictor
+
+# Update DEFECT_CLASSES export for compatibility
+__all__ = ['get_predictor', 'DEFECT_CLASSES', 'Predictor']
 
 if __name__ == "__main__":
     # Test
