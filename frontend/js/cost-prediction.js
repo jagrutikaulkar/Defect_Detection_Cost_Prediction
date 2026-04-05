@@ -22,6 +22,10 @@ async function handleCostPrediction(event) {
             body: JSON.stringify(data)
         });
         
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const result = await response.json();
         
         if (result.success || result.status === 'success') {
@@ -133,6 +137,10 @@ async function loadCostHistory() {
             }
         });
         
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
         
         if (data.status === 'success' && data.data && data.data.length > 0) {
@@ -155,7 +163,15 @@ function updateCostHistoryTable(detections) {
         return;
     }
     
-    tbody.innerHTML = detections.map(detection => `
+    // Filter only detections with predicted_cost (actual defects, not normal images)
+    const costDetections = detections.filter(d => d.predicted_cost);
+    
+    if (costDetections.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4">No defects detected. Normal images do not generate costs.</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = costDetections.map(detection => `
         <tr>
             <td>${new Date(detection.created_at).toLocaleString()}</td>
             <td>${detection.defect_area ? detection.defect_area.toFixed(1) + '%' : '-'}</td>
@@ -204,6 +220,10 @@ async function deleteCostHistory() {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
         const data = await response.json();
         

@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Defect Detection - Industrial Quality Control</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <style>
+        .video-upload-section {
+            background: white;
+            border: 2px dashed #3b82f6;
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 2rem;
+        }
+
+        .video-upload-section:hover {
+            border-color: #1e40af;
+            background: #f8fafc;
+        }
+
+        .video-upload-section.dragover {
+            background: #eff6ff;
+            border-color: #1e40af;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #3b82f6;
+            margin-bottom: 1rem;
+        }
+
+        .upload-text h3 {
+            color: #1f2937;
+            font-size: 1.3rem;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .upload-text p {
+            color: #6b7280;
+            margin: 0;
+            font-size: 0.95rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .video-controls {
+            background: #f9fafb;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            border: 1px solid #e5e7eb;
+        }
+
+        .control-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .control-item label {
+            display: block;
+            color: #374151;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .control-item input,
+        .control-item select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .control-item input:focus,
+        .control-item select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .control-help {
+            color: #6b7280;
+            font-size: 0.8rem;
+            margin-top: 0.3rem;
+        }
+
+        .btn-analyze {
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            color: white;
+            padding: 1rem 2.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .btn-analyze:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-analyze:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading-state {
+            display: none;
+            text-align: center;
+            padding: 3rem;
+            background: linear-gradient(135deg, #f0f9ff 0%, #f8fafc 100%);
+            border-radius: 12px;
+            border: 1px solid #e0f2fe;
+        }
+
+        .loading-spinner {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 2rem;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-spinner::before {
+            content: '';
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border: 4px solid #e0f2fe;
+            border-top-color: #3b82f6;
+            border-right-color: #1e40af;
+            border-radius: 50%;
+            animation: spin 2s linear infinite;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .loading-spinner::after {
+            content: '';
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border: 3px solid #f0f9ff;
+            border-top-color: #0ea5e9;
+            border-radius: 50%;
+            animation: spin 1.5s linear infinite reverse;
+            z-index: 2;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes slideInDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutUp {
+            from {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+        }
+
+        #loadingState h3 {
+            color: #1f2937;
+            font-size: 1.3rem;
+            margin: 0 0 0.75rem 0;
+            font-weight: 600;
+        }
+
+        .loading-text {
+            color: #6b7280;
+            font-size: 0.95rem;
+            margin-top: 0.75rem;
+            animation: pulse 2s ease-in-out infinite;
+            display: inline-block;
+            min-width: 300px;
+        }
+
+        .loading-dots::after {
+            content: '';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80%, 100% { content: '...'; }
+        }
+
+        .results-section {
+            display: none;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .summary-card h4 {
+            color: #6b7280;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 0 0 0.75rem 0;
+            font-weight: 600;
+        }
+
+        .summary-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 0;
+        }
+
+        .frames-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .frame-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.3s;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .frame-card:hover {
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            transform: translateY(-4px);
+        }
+
+        .frame-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background: #f0f0f0;
+        }
+
+        .frame-info {
+            padding: 1rem;
+        }
+
+        .frame-info h5 {
+            color: #1f2937;
+            font-size: 0.95rem;
+            margin: 0 0 0.5rem 0;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .frame-details {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .detail-item {
+            flex: 1;
+        }
+
+        .detail-label {
+            color: #9ca3af;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 0.25rem;
+        }
+
+        .detail-value {
+            color: #1f2937;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .error-message {
+            display: none;
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .error-message i {
+            margin-right: 0.75rem;
+        }
+
+        .video-info {
+            background: #f0f9ff;
+            border-left: 4px solid #3b82f6;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            border-radius: 4px;
+        }
+
+        .video-info p {
+            margin: 0.5rem 0;
+            color: #1f2937;
+        }
+
+        .video-info strong {
+            color: #1e40af;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <i class="fas fa-industry"></i>
+                <span>Ind<span class="highlight">AI</span>Tech</span>
+            </div>
+            
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="dashboard.html">Dashboard</a>
+                <a href="defect-detection.html">Defect Detection</a>
+                <a href="cost-prediction.html">Cost Prediction</a>
+            </div>
+            
+            <div class="nav-auth">
+                <button class="btn-logout" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Dashboard Container -->
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <a href="dashboard.html">
+                <i class="fas fa-chart-line"></i> Dashboard
+            </a>
+            <a href="defect-detection.html">
+                <i class="fas fa-camera"></i> Defect Detection
+            </a>
+            <a href="video-detection.html" class="active">
+                <i class="fas fa-film"></i> Video Detection
+            </a>
+            <a href="cost-prediction.html">
+                <i class="fas fa-calculator"></i> Cost Prediction
+            </a>
+            <a href="analytics.html">
+                <i class="fas fa-chart-pie"></i> Analytics
+            </a>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <h1>Video Defect Detection</h1>
+            <p class="dashboard-intro">Upload and analyze steel surface defects in video format</p>
+
+            <!-- Error Message -->
+            <div class="error-message" id="errorMessage">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="errorText"></span>
+            </div>
+
+            <!-- Upload Section -->
+            <div class="upload-container" id="uploadContainer">
+                <div class="video-upload-section" id="uploadZone">
+                    <div class="upload-icon">
+                        <i class="fas fa-video"></i>
+                    </div>
+                    <div class="upload-text">
+                        <h3>Drag your video or click to upload</h3>
+                        <p>Supported formats: MP4, AVI, MOV, MKV, FLV, WMV (Max 500MB)</p>
+                    </div>
+                    <input type="file" id="videoInput" class="file-input" accept="video/*">
+                </div>
+
+                <!-- Video Controls -->
+                <div class="video-controls">
+                    <div class="control-group">
+                        <div class="control-item">
+                            <label for="confidenceThreshold">Confidence Threshold (%)</label>
+                            <input type="number" id="confidenceThreshold" min="0" max="100" value="70" step="5">
+                            <div class="control-help">Minimum confidence to save frame (0-100%)</div>
+                        </div>
+                        <div class="control-item">
+                            <label for="frameInterval">Frame Interval</label>
+                            <input type="number" id="frameInterval" min="1" max="30" value="5">
+                            <div class="control-help">Process every nth frame (1 = every frame)</div>
+                        </div>
+                    </div>
+                    <button class="btn-analyze" id="analyzeBtn" disabled>
+                        <i class="fas fa-play"></i> Start Analysis
+                    </button>
+                </div>
+
+                <!-- Selected File Info -->
+                <div id="selectedFileInfo" style="display: none; background: #f0f9ff; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #3b82f6;">
+                    <p style="margin: 0; color: #1f2937;"><strong>Selected File:</strong> <span id="selectedFileName"></span></p>
+                    <p style="margin: 0.5rem 0 0; color: #6b7280; font-size: 0.9rem;">File size: <span id="selectedFileSize"></span></p>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div class="loading-state" id="loadingState">
+                <div class="loading-spinner"></div>
+                <h3><span class="loading-dots">Analyzing Video</span></h3>
+                <p class="loading-text">Extracting frames and detecting defects. This may take a few moments.</p>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results-section" id="resultsSection">
+                <div style="margin-bottom: 2rem;">
+                    <button class="btn-primary" onclick="resetAnalysis()" style="background: #6b7280;">
+                        <i class="fas fa-arrow-left"></i> Analyze Another Video
+                    </button>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="summary-cards">
+                    <div class="summary-card">
+                        <h4>Video Analyzed</h4>
+                        <p class="value" id="totalFrames">-</p>
+                    </div>
+                    <div class="summary-card">
+                        <h4>Frames Processed</h4>
+                        <p class="value" id="framesAnalyzed">-</p>
+                    </div>
+                    <div class="summary-card">
+                        <h4>Defects Detected</h4>
+                        <p class="value" id="defectsDetected">-</p>
+                    </div>
+                    <div class="summary-card">
+                        <h4>Defect Rate</h4>
+                        <p class="value" id="defectRate">-</p>
+                    </div>
+                </div>
+
+                <!-- Video Info -->
+                <div class="video-info">
+                    <p><strong>Video Duration:</strong> <span id="videoDuration">-</span> seconds</p>
+                    <p><strong>FPS:</strong> <span id="videoFps">-</span></p>
+                    <p><strong>Total Frames in Video:</strong> <span id="videoTotalFrames">-</span></p>
+                </div>
+
+                <!-- Detected Frames -->
+                <div id="framesContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h5>IndAITech</h5>
+                <p>AI-powered quality control for modern manufacturing</p>
+            </div>
+            <div class="footer-section">
+                <h5>Quick Links</h5>
+                <ul>
+                    <li><a href="dashboard.html">Dashboard</a></li>
+                    <li><a href="defect-detection.html">Detection</a></li>
+                    <li><a href="analytics.html">Analytics</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Industrial Quality Control. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Authentication check
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'index.html';
+        }
+
+        const uploadZone = document.getElementById('uploadZone');
+        const videoInput = document.getElementById('videoInput');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const uploadContainer = document.getElementById('uploadContainer');
+        const loadingState = document.getElementById('loadingState');
+        const resultsSection = document.getElementById('resultsSection');
+        const errorMessage = document.getElementById('errorMessage');
+        const selectedFileInfo = document.getElementById('selectedFileInfo');
+
+        let selectedFile = null;
+
+        // File selection
+        uploadZone.addEventListener('click', () => videoInput.click());
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        videoInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            selectedFile = file;
+            analyzeBtn.disabled = false;
+            
+            document.getElementById('selectedFileName').textContent = file.name;
+            document.getElementById('selectedFileSize').textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+            selectedFileInfo.style.display = 'block';
+            
+            // Show success notification
+            showSuccessNotification(`Video selected: ${file.name}`);
+        }
+
+        analyzeBtn.addEventListener('click', async () => {
+            if (!selectedFile) {
+                showError('Please select a video file');
+                return;
+            }
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showError('Session expired. Please log in again.');
+                setTimeout(() => window.location.href = 'index.html', 2000);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('video', selectedFile);
+            formData.append('confidence_threshold', document.getElementById('confidenceThreshold').value);
+            formData.append('frame_interval', document.getElementById('frameInterval').value);
+
+            try {
+                uploadContainer.style.display = 'none';
+                loadingState.style.display = 'block';
+                errorMessage.style.display = 'none';
+
+                console.log('Uploading video with token:', token.substring(0, 10) + '...');
+                
+                const response = await fetch('/api/defect/detect-video', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                console.log('Response status:', response.status);
+
+                let result;
+                try {
+                    result = await response.json();
+                } catch (e) {
+                    // If response is not JSON, it's likely an error page
+                    throw new Error(`Server error (${response.status}): ${response.statusText}`);
+                }
+
+                console.log('API Response:', result);
+
+                if (result.status === 'success') {
+                    console.log('Video uploaded successfully!');
+                    displayResults(result.data, result.result_folder);
+                    // Show success notification
+                    showSuccessNotification('Video uploaded and analyzed successfully!');
+                } else {
+                    throw new Error(result.message || 'Video analysis failed');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+                uploadContainer.style.display = 'block';
+                loadingState.style.display = 'none';
+            }
+        });
+
+        function displayResults(data, resultFolder) {
+            loadingState.style.display = 'none';
+            resultsSection.style.display = 'block';
+
+            // Update summary cards
+            document.getElementById('totalFrames').textContent = data.total_frames;
+            document.getElementById('framesAnalyzed').textContent = data.frames_analyzed;
+            document.getElementById('defectsDetected').textContent = data.defects_detected;
+            
+            const defectRate = data.frames_analyzed > 0 
+                ? ((data.defects_detected / data.frames_analyzed) * 100).toFixed(1)
+                : '0';
+            document.getElementById('defectRate').textContent = defectRate + '%';
+
+            // Video info
+            document.getElementById('videoDuration').textContent = data.video_duration;
+            document.getElementById('videoFps').textContent = Math.round(data.fps);
+            document.getElementById('videoTotalFrames').textContent = data.total_frames;
+
+            // Add timing information
+            const videoInfoSection = document.querySelector('.video-info');
+            videoInfoSection.innerHTML += `
+                <hr style="border: none; border-top: 1px solid #cbd5e1; margin: 1rem 0;">
+                <p><strong>Processing Time:</strong> <span id="processingTime">${data.total_processing_time_ms}ms</span></p>
+                <p><strong>Avg Time per Frame:</strong> <span id="avgTimePerFrame">${data.avg_time_per_frame_ms}ms</span></p>
+                <p><strong>Avg Time per Detection:</strong> <span id="avgTimePerDetection">${data.avg_time_per_detection_ms}ms</span></p>
+            `;
+
+            // Display detected frames
+            displayDetectedFrames(data.detected_frames, resultFolder);
+        }
+
+        function displayDetectedFrames(frames, resultFolder) {
+            const container = document.getElementById('framesContainer');
+            container.innerHTML = '<h3 style="color: #1f2937; margin-top: 2rem;">Detected Defects</h3>';
+
+            if (frames.length === 0) {
+                container.innerHTML += '<p style="color: #6b7280; text-align: center; padding: 2rem;">No defects detected with the specified confidence threshold.</p>';
+                return;
+            }
+
+            const framesGrid = document.createElement('div');
+            framesGrid.className = 'frames-grid';
+
+            frames.forEach((frame, index) => {
+                const card = document.createElement('div');
+                card.className = 'frame-card';
+                
+                const imagePath = `/api/defect/video-frames/${resultFolder.split('\\').pop()}/${frame.filename}`;
+                
+                card.innerHTML = `
+                    <img src="${imagePath}" alt="Detected defect" class="frame-image">
+                    <div class="frame-info">
+                        <h5>${frame.defect_type}</h5>
+                        <div class="frame-details">
+                            <div class="detail-item">
+                                <div class="detail-label">Confidence</div>
+                                <div class="detail-value">${frame.confidence}%</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Time</div>
+                                <div class="detail-value">${frame.timestamp}s</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Frame #</div>
+                                <div class="detail-value">${frame.frame_number}</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb;">
+                            <div class="detail-label">Processing Time</div>
+                            <div class="detail-value" style="color: #3b82f6; font-weight: 700;">${frame.processing_time_ms}ms</div>
+                        </div>
+                    </div>
+                `;
+                
+                framesGrid.appendChild(card);
+            });
+
+            container.appendChild(framesGrid);
+        }
+
+        function resetAnalysis() {
+            selectedFile = null;
+            videoInput.value = '';
+            uploadContainer.style.display = 'block';
+            resultsSection.style.display = 'none';
+            loadingState.style.display = 'none';
+            selectedFileInfo.style.display = 'none';
+            analyzeBtn.disabled = true;
+            window.scrollTo(0, 0);
+        }
+
+        function showError(message) {
+            document.getElementById('errorText').textContent = message;
+            errorMessage.style.display = 'block';
+            window.scrollTo(0, 0);
+        }
+
+        function showSuccessNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #10b981;
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+                font-weight: 500;
+                z-index: 9999;
+                animation: slideInDown 0.3s ease;
+                max-width: 400px;
+            `;
+            notification.innerHTML = `<i class="fas fa-check-circle" style="margin-right: 0.75rem;"></i>${message}`;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOutUp 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 4000);
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

@@ -48,6 +48,11 @@ wheels/
 logs/
 *.log
 
+# Uploads and temporary files
+uploads/
+*.jpg
+*.png
+
 # Data
 data/uploads/*
 data/datasets/NEU-DET/IMAGES/*

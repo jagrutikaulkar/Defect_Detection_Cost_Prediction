@@ -5,69 +5,32 @@ Minimal, clean, production-ready
 
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from flask_cors import CORS
+from bson import ObjectId
+from json import JSONEncoder
 import os
-import json
 import hashlib
 import secrets
 from datetime import datetime
 from predict import get_predictor
+from database import (
+    save_detection, get_image_detections, get_video_detections, 
+    get_user_detections, delete_user_detections, get_analytics,
+    create_user, get_user, user_exists, delete_user
+)
+
+# Custom JSON Encoder for MongoDB ObjectId
+class MongoJSONEncoder(JSONEncoder):
+    def default(self, o):
+        if isinstance(o, ObjectId):
+            return str(o)
+        return super().default(o)
 
 app = Flask(__name__, template_folder='frontend', static_folder='frontend', static_url_path='')
+app.json_encoder = MongoJSONEncoder
 CORS(app)
 
-# Simple in-memory user storage
-USERS_FILE = 'users.json'
-DETECTIONS_FILE = 'detections.json'
+# In-memory token storage (in-schema: token -> username)
 TOKENS = {}  # token -> username mapping
-
-def load_users():
-    """Load users from file or return empty dict"""
-    if os.path.exists(USERS_FILE):
-        try:
-            with open(USERS_FILE, 'r') as f:
-                return json.load(f)
-        except:
-            return {}
-    return {}
-
-def save_users(users):
-    """Save users to file"""
-    with open(USERS_FILE, 'w') as f:
-        json.dump(users, f)
-
-def load_detections():
-    """Load detection history from file"""
-    if os.path.exists(DETECTIONS_FILE):
-        try:
-            with open(DETECTIONS_FILE, 'r') as f:
-                return json.load(f)
-        except:
-            return {}
-    return {}
-
-def save_detections(detections):
-    """Save detection history to file"""
-    with open(DETECTIONS_FILE, 'w') as f:
-        json.dump(detections, f)
-
-def add_detection(username, detection_data):
-    """Add a detection record for a user"""
-    detections = load_detections()
-    
-    if username not in detections:
-        detections[username] = []
-    
-    # Add timestamp if not present
-    if 'created_at' not in detection_data:
-        detection_data['created_at'] = datetime.now().isoformat()
-    
-    detections[username].append(detection_data)
-    save_detections(detections)
-
-def get_user_detections(username):
-    """Get all detections for a user"""
-    detections = load_detections()
-    return detections.get(username, [])
 
 def hash_password(password):
     """Hash password with random salt"""
@@ -91,6 +54,19 @@ def generate_token():
 def get_current_user(token):
     """Get username from token"""
     return TOKENS.get(token)
+
+def clean_mongodb_doc(doc):
+    """Convert MongoDB document to JSON-serializable format"""
+    if doc is None:
+        return None
+    if isinstance(doc, list):
+        return [clean_mongodb_doc(item) for item in doc]
+    if isinstance(doc, dict):
+        return {
+            k: str(v) if isinstance(v, ObjectId) else clean_mongodb_doc(v)
+            for k, v in doc.items()
+        }
+    return doc
 
 # Create upload folder
 UPLOAD_FOLDER = 'uploads'
@@ -125,25 +101,21 @@ def register():
         if not password or len(password) < 6:
             return jsonify({'status': 'error', 'message': 'Password must be at least 6 characters'}), 400
         
-        users = load_users()
-        
-        # Check if user exists
-        if username in users:
+        # Check if user exists in MongoDB
+        if user_exists(username):
             return jsonify({'status': 'error', 'message': 'Username already exists'}), 400
         
-        # Create user
-        users[username] = {
-            'email': email,
-            'password': hash_password(password),
-            'created_at': datetime.now().isoformat()
-        }
+        # Hash password and create user in MongoDB
+        password_hash = hash_password(password)
+        success = create_user(username, email, password_hash)
         
-        save_users(users)
-        
-        return jsonify({
-            'status': 'success',
-            'message': 'User registered successfully'
-        }), 201
+        if success:
+            return jsonify({
+                'status': 'success',
+                'message': 'User registered successfully'
+            }), 201
+        else:
+            return jsonify({'status': 'error', 'message': 'Failed to create user'}), 500
         
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
@@ -159,14 +131,13 @@ def login():
         if not username or not password:
             return jsonify({'status': 'error', 'message': 'Username and password required'}), 400
         
-        users = load_users()
+        # Get user from MongoDB
+        user = get_user(username)
         
-        # Check if user exists
-        if username not in users:
+        if not user:
             return jsonify({'status': 'error', 'message': 'Invalid username or password'}), 401
         
         # Verify password
-        user = users[username]
         if not verify_password(password, user['password']):
             return jsonify({'status': 'error', 'message': 'Invalid username or password'}), 401
         
@@ -215,19 +186,17 @@ def get_profile():
             return jsonify({'status': 'error', 'message': 'Unauthorized'}), 401
         
         username = TOKENS[token]
-        users = load_users()
+        user = get_user(username)
         
-        if username not in users:
+        if not user:
             return jsonify({'status': 'error', 'message': 'User not found'}), 404
-        
-        user = users[username]
         
         return jsonify({
             'status': 'success',
             'data': {
-                'username': username,
-                'email': user['email'],
-                'created_at': user['created_at']
+                'username': user.get('username'),
+                'email': user.get('email'),
+                'created_at': user.get('created_at')
             }
         }), 200
         
@@ -339,24 +308,30 @@ def detect_defect():
         machine_time = float(request.form.get('machine_time', 2.0))
         labor_cost = float(request.form.get('labor_cost', 300))
         material_cost = float(request.form.get('material_cost', 200))
+        energy_consumption = float(request.form.get('energy_consumption', 100))  # NEW
+        production_volume = float(request.form.get('production_volume', 1000))   # NEW
         
         # Validate ranges
         machine_time = max(0.5, min(10, machine_time))
         labor_cost = max(50, min(1000, labor_cost))
         material_cost = max(50, min(2000, material_cost))
+        energy_consumption = max(10, min(500, energy_consumption))
+        production_volume = max(100, min(10000, production_volume))
         
         # Save file
         filename = f"temp_{int(__import__('time').time() * 1000)}.jpg"
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
         
-        # Make prediction with production parameters
+        # Make prediction with ENHANCED production parameters
         predictor = get_predictor()
         result = predictor.predict(
             filepath,
             machine_time=machine_time,
             labor_cost=labor_cost,
-            material_cost=material_cost
+            material_cost=material_cost,
+            energy_consumption=energy_consumption,
+            production_volume=production_volume
         )
         
         # Clean up
@@ -377,25 +352,33 @@ def detect_defect():
             detection_result = {
                 'defect_type': result.get('defect_type'),
                 'confidence': result.get('confidence'),
-                'severity': result.get('severity'),
-                'predicted_cost': result.get('predicted_cost'),
-                'defect_area': result.get('defect_area'),
+                'is_normal': result.get('is_normal', False),
+                'all_predictions': all_preds,
                 'probabilities': probabilities_array,
                 'created_at': datetime.now().isoformat()
             }
             
-            # Save detection to history
+            # Add defect-specific fields only if not normal
+            if not result.get('is_normal', False):
+                detection_result.update({
+                    'severity': result.get('severity'),
+                    'predicted_cost': result.get('predicted_cost'),
+                    'defect_area': result.get('defect_area'),
+                    'bounding_box': result.get('bounding_box')
+                })
+            
+            # ✅ Save detection to MongoDB
             try:
                 current_user = get_current_user(request.headers.get('Authorization', '').replace('Bearer ', ''))
                 if current_user:
-                    add_detection(current_user, detection_result)
+                    save_detection(current_user, detection_result)
             except:
                 pass
             
             return jsonify({
                 'status': 'success',
                 'success': True,
-                'data': detection_result
+                'data': clean_mongodb_doc(detection_result)
             }), 200
         else:
             return jsonify({
@@ -405,15 +388,19 @@ def detect_defect():
             }), 400
     
     except Exception as e:
+        import traceback
+        error_msg = str(e)
+        traceback.print_exc()
+        print(f"[ERROR] Defect detection failed: {error_msg}")
         return jsonify({
             'status': 'error',
             'success': False,
-            'error': str(e)
+            'error': error_msg
         }), 500
 
 @app.route('/api/defect/history', methods=['GET'])
 def get_detection_history():
-    """Get user's detection history"""
+    """Get user's detection history (image detections only)"""
     try:
         token = request.headers.get('Authorization', '').replace('Bearer ', '')
         current_user = get_current_user(token)
@@ -426,18 +413,155 @@ def get_detection_history():
         
         # Get user's detections (sorted by newest first)
         detections = get_user_detections(current_user)
-        detections.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+        
+        # Filter out video records - only return image detections
+        image_detections = [d for d in detections if d.get('type') != 'video' and not d.get('detected_frames') and 'confidence' in d]
+        
+        image_detections.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+        
+        print(f"[DEBUG] History: Filtered {len(image_detections)} image detections from {len(detections)} total records for user {current_user}")
         
         return jsonify({
             'status': 'success',
-            'data': detections
+            'data': clean_mongodb_doc(image_detections)
         }), 200
         
+    except Exception as e:
+        print(f"[ERROR] Error in get_detection_history: {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/defect/detect-video', methods=['POST'])
+def detect_video():
+    """Detect defects in uploaded video"""
+    try:
+        auth_header = request.headers.get('Authorization', '')
+        print(f"[DEBUG] Auth header received: {auth_header[:20]}..." if auth_header else "[DEBUG] No auth header")
+        
+        token = auth_header.replace('Bearer ', '') if auth_header else ''
+        print(f"[DEBUG] Token extracted: {token[:20]}..." if token else "[DEBUG] No token extracted")
+        print(f"[DEBUG] Valid tokens in memory: {len(TOKENS)}")
+        
+        current_user = get_current_user(token)
+        print(f"[DEBUG] Current user: {current_user}")
+        
+        if not current_user:
+            print(f"[DEBUG] Returning Unauthorized - token not found in TOKENS")
+            error_msg = 'Session expired. Please log in again.'
+            if not auth_header:
+                error_msg = 'No authorization header provided. Please log in.'
+            elif not token:
+                error_msg = 'Invalid token format. Please log in again.'
+            
+            return jsonify({
+                'status': 'error',
+                'message': error_msg
+            }), 401
+        
+        # Check for video file
+        if 'video' not in request.files:
+            return jsonify({
+                'status': 'error',
+                'message': 'No video file provided'
+            }), 400
+        
+        video_file = request.files['video']
+        if video_file.filename == '':
+            return jsonify({
+                'status': 'error',
+                'message': 'No video selected'
+            }), 400
+        
+        # Validate file type
+        allowed_video_types = {'mp4', 'avi', 'mov', 'mkv', 'flv', 'wmv'}
+        file_ext = video_file.filename.rsplit('.', 1)[1].lower() if '.' in video_file.filename else ''
+        
+        if file_ext not in allowed_video_types:
+            return jsonify({
+                'status': 'error',
+                'message': f'Invalid video format. Allowed: {", ".join(allowed_video_types)}'
+            }), 400
+        
+        # Save video temporarily
+        video_filename = f"{current_user}_{int(datetime.now().timestamp())}.{file_ext}"
+        video_filepath = os.path.join(app.config['UPLOAD_FOLDER'], video_filename)
+        video_file.save(video_filepath)
+        
+        # Create output folder for detected frames
+        output_folder = os.path.join(app.config['UPLOAD_FOLDER'], f"video_results_{current_user}_{int(datetime.now().timestamp())}")
+        os.makedirs(output_folder, exist_ok=True)
+        
+        # Get parameters
+        confidence_threshold = float(request.form.get('confidence_threshold', 70))
+        frame_interval = int(request.form.get('frame_interval', 5))
+        artificial_delay_ms = int(request.form.get('artificial_delay_ms', 0))  # Optional delay for testing
+        
+        # Process video
+        predictor = get_predictor()
+        result = predictor.process_video(video_filepath, output_folder, confidence_threshold, frame_interval, artificial_delay_ms)
+        
+        if result['status'] == 'success':
+            # Store video analysis result in MongoDB
+            video_analysis = {
+                'type': 'video',
+                'filename': video_filename,
+                'result_folder': output_folder,
+                'frames_analyzed': result.get('frames_analyzed', 0),
+                'defects_detected': result.get('defects_detected', 0),
+                'detected_frames': result.get('detected_frames', []),
+                'created_at': datetime.now().isoformat()
+            }
+            save_detection(current_user, video_analysis)
+            
+            # Clean up temp video file
+            try:
+                os.remove(video_filepath)
+            except:
+                pass
+            
+            return jsonify({
+                'status': 'success',
+                'data': result,
+                'result_folder': output_folder
+            }), 200
+        else:
+            # Clean up on error
+            try:
+                os.remove(video_filepath)
+            except:
+                pass
+            
+            return jsonify({
+                'status': 'error',
+                'message': result.get('error', 'Video processing failed')
+            }), 400
+    
     except Exception as e:
         return jsonify({
             'status': 'error',
             'message': str(e)
         }), 500
+
+@app.route('/api/defect/video-frames/<folder_name>/<filename>', methods=['GET'])
+def get_video_frame(folder_name, filename):
+    """Get detected frame from video analysis"""
+    try:
+        frame_path = os.path.join(app.config['UPLOAD_FOLDER'], folder_name, filename)
+        
+        # Security check: ensure path is within uploads folder
+        if not os.path.abspath(frame_path).startswith(os.path.abspath(app.config['UPLOAD_FOLDER'])):
+            return 'Unauthorized', 403
+        
+        if os.path.exists(frame_path):
+            return send_from_directory(os.path.dirname(frame_path), filename)
+        else:
+            return 'Not found', 404
+    except Exception as e:
+        return str(e), 500
 
 @app.route('/api/defect/history/delete', methods=['DELETE'])
 def delete_detection_history():
@@ -452,16 +576,19 @@ def delete_detection_history():
                 'message': 'Unauthorized'
             }), 401
         
-        # Load and delete user's detections
-        detections = load_detections()
-        if current_user in detections:
-            del detections[current_user]
-            save_detections(detections)
+        # Delete user's detections from MongoDB
+        success = delete_user_detections(current_user)
         
-        return jsonify({
-            'status': 'success',
-            'message': 'History deleted successfully'
-        }), 200
+        if success:
+            return jsonify({
+                'status': 'success',
+                'message': 'History deleted successfully'
+            }), 200
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Failed to delete history'
+            }), 500
         
     except Exception as e:
         return jsonify({
@@ -585,7 +712,7 @@ def predict_cost():
                         'defect_rate': defect_rate
                     }
                 }
-                add_detection(current_user, cost_prediction_record)
+                save_detection(current_user, cost_prediction_record)
         except:
             pass
         
@@ -641,6 +768,77 @@ def check_models():
         'defect_model_path': 'models/defect_model.h5',
         'cost_model_path': 'models/cost_model.pkl'
     }), 200
+
+# ====== ANALYTICS ENDPOINTS ======
+
+@app.route('/api/analytics/dashboard', methods=['GET'])
+def get_analytics():
+    """Get analytics dashboard data"""
+    try:
+        token = request.headers.get('Authorization')
+        if not token:
+            return jsonify({'status': 'error', 'message': 'Unauthorized'}), 401
+        
+        username = get_current_user(token)
+        if not username:
+            return jsonify({'status': 'error', 'message': 'Invalid token'}), 401
+        
+        # Get user's detection history
+        detections = get_user_detections(username)
+        
+        if not detections:
+            return jsonify({
+                'status': 'success',
+                'data': {
+                    'total_detections': 0,
+                    'defect_distribution': {},
+                    'detection_trend': [],
+                    'average_confidence': 0,
+                    'total_cost_estimated': 0
+                }
+            }), 200
+        
+        # Calculate analytics
+        defect_counts = {}
+        total_confidence = 0
+        total_cost = 0
+        date_counts = {}
+        
+        for detection in detections:
+            # Count defect types
+            defect_type = detection.get('defect_type', 'Unknown')
+            defect_counts[defect_type] = defect_counts.get(defect_type, 0) + 1
+            
+            # Sum confidence scores
+            confidence = detection.get('confidence', 0)
+            total_confidence += confidence
+            
+            # Sum estimated costs
+            cost = detection.get('estimated_cost', 0)
+            total_cost += cost
+            
+            # Count by date
+            timestamp = detection.get('timestamp', '')
+            date = timestamp.split('T')[0] if timestamp else 'Unknown'
+            date_counts[date] = date_counts.get(date, 0) + 1
+        
+        # Build trend data
+        trend = [{'date': date, 'count': count} for date, count in sorted(date_counts.items())]
+        
+        average_confidence = total_confidence / len(detections) if detections else 0
+        
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'total_detections': len(detections),
+                'defect_distribution': defect_counts,
+                'detection_trend': trend,
+                'average_confidence': round(average_confidence, 3),
+                'total_cost_estimated': round(total_cost, 2)
+            }
+        }), 200
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @app.errorhandler(400)
 def bad_request(error):

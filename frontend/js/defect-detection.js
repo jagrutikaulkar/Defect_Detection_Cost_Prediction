@@ -1,7 +1,7 @@
 /* Defect Detection JavaScript */
 
-// Store current detection result for reference
-let currentDetectionResult = null;
+// Real steel surface defect types used in industry
+const DEFECT_CLASSES = ['Scale', 'Scratch', 'Dent', 'Pit/Corrosion', 'Stain', 'Crack'];
 
 // Handle file input change
 document.addEventListener('DOMContentLoaded', () => {
@@ -13,9 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    
-    // Initialize theme
-    initTheme();
 });
 
 // Handle image upload and detection
@@ -26,10 +23,6 @@ async function handleDefectDetection(file) {
         const previewImg = document.getElementById('previewImage');
         if (previewImg) {
             previewImg.src = e.target.result;
-            previewImg.onload = () => {
-                // Initialize canvas when image loads
-                initBoundingBoxCanvas();
-            };
         }
     };
     reader.readAsDataURL(file);
@@ -55,6 +48,10 @@ async function handleDefectDetection(file) {
             },
             body: formData
         });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
         const data = await response.json();
         
@@ -112,44 +109,79 @@ function showDetectionResults(result) {
     const resultsSection = document.getElementById('resultsSection');
     if (!resultsSection) return;
     
-    // Store result for bounding box drawing
-    currentDetectionResult = result;
-    
-    // Update results with proper defect type display
-    const defectDisplay = result.defect_type.charAt(0).toUpperCase() + result.defect_type.slice(1);
-    document.getElementById('defectType').textContent = defectDisplay;
-    document.getElementById('confidence').textContent = `${result.confidence}%`;
-    const severityEl = document.getElementById('severity');
-    severityEl.textContent = result.severity.toUpperCase();
-    severityEl.className = `value ${result.severity.toUpperCase()}`;
-    document.getElementById('defectArea').textContent = `${result.defect_area}%`;
-    document.getElementById('predictedCost').textContent = `₹${result.predicted_cost.toFixed(2)}`;
-    const processingTimeMs = Math.round(result.processing_time * 1000);
-    document.getElementById('processingTime').textContent = `${processingTimeMs}ms`;
-    
-    // Display probabilities
-    const probContainer = document.getElementById('probabilitiesContainer');
-    if (probContainer && result.all_predictions) {
-        const predictions = Object.entries(result.all_predictions)
-            .map(([name, confidence]) => ({ name, confidence }))
-            .sort((a, b) => b.confidence - a.confidence);
-            
-        probContainer.innerHTML = predictions.map((p) => `
-            <div class="probability-item">
-                <span>${p.name.charAt(0).toUpperCase() + p.name.slice(1)}</span>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: ${p.confidence}%\"></div>
-                </div>
-                <span>${p.confidence.toFixed(1)}%</span>
-            </div>
-        `).join('');
-    }
-    
-    // Draw bounding boxes if available
-    if (result.bounding_boxes && result.bounding_boxes.length > 0) {
-        setTimeout(() => {
-            drawBoundingBoxes(result.bounding_boxes);
-        }, 100);
+    // Check if it's a normal image (no defect)
+    if (result.is_normal) {
+        // Display results for NORMAL image
+        document.getElementById('defectType').textContent = '✓ CLEAN';
+        document.getElementById('defectType').style.backgroundColor = '#10b981';
+        document.getElementById('defectType').style.color = '#fff';
+        document.getElementById('confidence').textContent = `${result.confidence}%`;
+        
+        // Hide defect-specific fields
+        document.getElementById('severity').parentElement.style.display = 'none';
+        document.getElementById('defectArea').parentElement.style.display = 'none';
+        document.getElementById('predictedCost').parentElement.style.display = 'none';
+        
+        // Get processing time
+        const processingTimeMs = Math.round((result.processing_time || 0.045) * 1000);
+        document.getElementById('processingTime').textContent = `${processingTimeMs}ms`;
+        
+        // Display probabilities
+        const probContainer = document.getElementById('probabilitiesContainer');
+        if (probContainer && result.all_predictions) {
+            probContainer.innerHTML = Object.entries(result.all_predictions)
+                .sort((a, b) => b[1] - a[1])
+                .map(([className, conf]) => `
+                    <div class="probability-item">
+                        <span class="class-name">${className}</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${conf}%; background: #10b981"></div>
+                        </div>
+                        <span class="confidence-value">${conf.toFixed(1)}%</span>
+                    </div>
+                `).join('');
+        }
+    } else {
+        // Display results for DEFECT image
+        document.getElementById('defectType').style.backgroundColor = '#ef4444';
+        document.getElementById('defectType').style.color = '#fff';
+        const defectDisplay = result.defect_type.charAt(0).toUpperCase() + result.defect_type.slice(1);
+        document.getElementById('defectType').textContent = defectDisplay;
+        document.getElementById('confidence').textContent = `${result.confidence}%`;
+        
+        // Show defect-specific fields
+        const severityEl = document.getElementById('severity');
+        severityEl.parentElement.style.display = 'block';
+        severityEl.textContent = result.severity.toUpperCase();
+        severityEl.className = `value ${result.severity.toUpperCase()}`;
+        
+        document.getElementById('defectArea').parentElement.style.display = 'block';
+        document.getElementById('defectArea').textContent = `${result.defect_area}%`;
+        
+        document.getElementById('predictedCost').parentElement.style.display = 'block';
+        document.getElementById('predictedCost').textContent = `₹${result.predicted_cost.toFixed(2)}`;
+        
+        const processingTimeMs = Math.round((result.processing_time || 0.045) * 1000);
+        document.getElementById('processingTime').textContent = `${processingTimeMs}ms`;
+        
+        // Display probabilities with better formatting
+        const probContainer = document.getElementById('probabilitiesContainer');
+        if (probContainer && result.all_predictions) {
+            probContainer.innerHTML = Object.entries(result.all_predictions)
+                .sort((a, b) => b[1] - a[1])
+                .map(([className, conf]) => {
+                    const isDetected = className === result.defect_type;
+                    return `
+                        <div class="probability-item ${isDetected ? 'detected' : ''}">
+                            <span class="class-name">${className}</span>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${conf}%; background: ${isDetected ? '#3b82f6' : '#e5e7eb'}"></div>
+                            </div>
+                            <span class="confidence-value">${conf.toFixed(1)}%</span>
+                        </div>
+                    `;
+                }).join('');
+        }
     }
     
     resultsSection.style.display = 'block';
@@ -162,31 +194,64 @@ async function loadDetectionHistory() {
         const tbody = document.getElementById('historyTable');
         if (!tbody) return;
         
+        const token = localStorage.getItem('token');
+        if (!token) {
+            tbody.innerHTML = '<tr><td colspan="4">Please login to view history</td></tr>';
+            return;
+        }
+        
         const response = await fetch('/api/defect/history', {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${token}`
             }
         });
         
+        if (!response.ok) {
+            console.error(`[ERROR] History API returned status ${response.status}`);
+            const errorText = await response.text();
+            console.error('[ERROR] Response:', errorText);
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
+        console.log('[DEBUG] History data received:', data);
         
         if (data.status === 'success' && data.data && data.data.length > 0) {
-            tbody.innerHTML = data.data.map(detection => `
-                <tr>
-                    <td>${new Date(detection.created_at).toLocaleString()}</td>
-                    <td>${detection.defect_type}</td>
-                    <td>${detection.confidence.toFixed(1)}%</td>
-                    <td><span class="severity ${detection.severity}">${detection.severity.toUpperCase()}</span></td>
-                </tr>
-            `).join('');
+            // Filter out video records - only show image detections in history table
+            const imageDetections = data.data.filter(detection => {
+                // Skip video records (they have 'type: video' or 'detected_frames')
+                return detection.type !== 'video' && !detection.detected_frames && detection.confidence !== undefined;
+            });
+            
+            console.log(`[DEBUG] Filtered ${imageDetections.length} image detections from ${data.data.length} total records`);
+            
+            if (imageDetections.length > 0) {
+                tbody.innerHTML = imageDetections.map(detection => {
+                    const severityDisplay = detection.is_normal ? 'NORMAL' : (detection.severity?.toUpperCase() || 'N/A');
+                    const severityClass = detection.is_normal ? 'normal' : (detection.severity || 'low');
+                    return `
+                        <tr>
+                            <td>${new Date(detection.created_at).toLocaleString()}</td>
+                            <td>${detection.defect_type}</td>
+                            <td>${parseFloat(detection.confidence).toFixed(1)}%</td>
+                            <td><span class="severity ${severityClass}">${severityDisplay}</span></td>
+                        </tr>
+                    `;
+                }).join('');
+                console.log(`[DEBUG] Rendered ${imageDetections.length} detections in history table`);
+            } else {
+                console.log('[DEBUG] No image detections found (only video records)');
+                tbody.innerHTML = '<tr><td colspan="4">No image detections yet</td></tr>';
+            }
         } else {
+            console.log('[DEBUG] No detections found in history');
             tbody.innerHTML = '<tr><td colspan="4">No detections yet</td></tr>';
         }
     } catch (error) {
         console.error('Error loading history:', error);
         const tbody = document.getElementById('historyTable');
         if (tbody) {
-            tbody.innerHTML = '<tr><td colspan="4">Error loading history</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4">Error loading history - check console</td></tr>';
         }
     }
 }
@@ -204,6 +269,10 @@ async function deleteDetectionHistory() {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
         const data = await response.json();
         
@@ -232,102 +301,3 @@ if (document.readyState !== 'loading') {
 } else {
     document.addEventListener('DOMContentLoaded', loadDetectionHistory);
 }
-
-/**
- * Bounding Box Drawing Functions
- */
-
-// Initialize canvas for bounding box drawing
-function initBoundingBoxCanvas() {
-    const canvas = document.getElementById('boundingBoxCanvas');
-    const img = document.getElementById('previewImage');
-    
-    if (!canvas || !img || !img.src) return;
-    
-    // Set canvas dimensions to match image
-    canvas.width = img.clientWidth;
-    canvas.height = img.clientHeight;
-    
-    // Scale to actual image dimensions for proper coordinate mapping
-    const rect = img.getBoundingClientRect();
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-}
-
-// Draw bounding boxes on canvas
-function drawBoundingBoxes(boundingBoxes) {
-    const canvas = document.getElementById('boundingBoxCanvas');
-    const img = document.getElementById('previewImage');
-    
-    if (!canvas || !img || !img.src) return;
-    
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Get actual canvas dimensions
-    const canvasWidth = canvas.width;
-    const canvasHeight = canvas.height;
-    
-    // Colors for bounding boxes
-    const colors = ['#ff3333', '#ff6b6b', '#ff9999', '#ffa0a0', '#ffcccc'];
-    
-    boundingBoxes.forEach((box, index) => {
-        if (!box || !box.pixel_width) return;
-        
-        // Convert percentage coordinates to pixel coordinates if needed
-        let x, y, w, h;
-        
-        if (box.pixel_x !== undefined) {
-            // Use pixel coordinates but scale to canvas size
-            const imgWidth = img.naturalWidth || img.width;
-            const imgHeight = img.naturalHeight || img.height;
-            x = (box.pixel_x / imgWidth) * canvasWidth;
-            y = (box.pixel_y / imgHeight) * canvasHeight;
-            w = (box.pixel_width / imgWidth) * canvasWidth;
-            h = (box.pixel_height / imgHeight) * canvasHeight;
-        } else {
-            // Use percentage coordinates
-            x = (box.x / 100) * canvasWidth;
-            y = (box.y / 100) * canvasHeight;
-            w = (box.width / 100) * canvasWidth;
-            h = (box.height / 100) * canvasHeight;
-        }
-        
-        const color = colors[index % colors.length];
-        
-        // Draw rectangle
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 3;
-        ctx.strokeRect(x, y, w, h);
-        
-        // Draw filled rectangle for label background
-        ctx.fillStyle = color;
-        ctx.fillRect(x, y - 25, 120, 25);
-        
-        // Draw label text
-        ctx.fillStyle = 'white';
-        ctx.font = 'bold 12px Arial';
-        ctx.textBaseline = 'top';
-        ctx.fillText(`Defect ${index + 1}`, x + 5, y - 20);
-        
-        // Draw corner markers
-        const cornerSize = 8;
-        ctx.fillStyle = color;
-        // Top-left
-        ctx.fillRect(x - cornerSize / 2, y - cornerSize / 2, cornerSize, cornerSize);
-        // Top-right
-        ctx.fillRect(x + w - cornerSize / 2, y - cornerSize / 2, cornerSize, cornerSize);
-        // Bottom-left
-        ctx.fillRect(x - cornerSize / 2, y + h - cornerSize / 2, cornerSize, cornerSize);
-        // Bottom-right
-        ctx.fillRect(x + w - cornerSize / 2, y + h - cornerSize / 2, cornerSize, cornerSize);
-    });
-}
-
-// Handle window resize to adjust canvas
-window.addEventListener('resize', () => {
-    if (currentDetectionResult && currentDetectionResult.bounding_boxes) {
-        initBoundingBoxCanvas();
-        drawBoundingBoxes(currentDetectionResult.bounding_boxes);
-    }
-});
