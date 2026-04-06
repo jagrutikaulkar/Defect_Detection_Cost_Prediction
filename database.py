@@ -15,15 +15,17 @@ load_dotenv()
 # MongoDB Connection String
 MONGODB_URI = "mongodb+srv://jagrutikaulkar0_db_user:BQhtOOiB086fuxp1@cluster0.bcohx26.mongodb.net/defect_detection?retryWrites=true&w=majority"
 
-# Initialize MongoDB Client
+# Initialize MongoDB Client (Non-blocking initialization)
+db = None
 try:
-    client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
-    # Verify connection
-    client.admin.command('ping')
+    print("⏳ Attempting MongoDB connection (non-blocking)...")
+    client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=2000, connectTimeoutMS=2000, 
+                         socketTimeoutMS=2000, retryWrites=False)
     db = client['defect_detection']
-    print("✓ MongoDB Atlas connected successfully!")
-except ServerSelectionTimeoutError:
-    print("❌ WARNING: MongoDB connection failed. Falling back to JSON storage.")
+    # Don't call ping() - it blocks. Connection test happens on first use.
+    print("✓ MongoDB client initialized (connection will be tested on first use)")
+except Exception as e:
+    print(f"⚠ MongoDB client initialization warning: {str(e)[:80]}")
     db = None
 
 # Collections
