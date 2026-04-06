@@ -10,6 +10,7 @@ from json import JSONEncoder
 import os
 import hashlib
 import secrets
+import threading
 from datetime import datetime
 from predict import get_predictor
 from database import (
@@ -17,6 +18,26 @@ from database import (
     get_user_detections, delete_user_detections, get_analytics,
     create_user, get_user, user_exists, delete_user
 )
+
+# Global model state with thread-safe initialization
+_models_lock = threading.Lock()
+_models_initialized = False
+_predictor = None
+
+def ensure_models_loaded():
+    """Lazy-load models on first request"""
+    global _models_initialized, _predictor
+    if not _models_initialized:
+        with _models_lock:
+            if not _models_initialized:
+                print("Loading ML models on first request...")
+                _predictor = get_predictor()
+                _models_initialized = True
+    return _predictor
+
+def get_models():
+    """Get loaded predictor instance"""
+    return ensure_models_loaded()
 
 # Custom JSON Encoder for MongoDB ObjectId
 class MongoJSONEncoder(JSONEncoder):
@@ -258,7 +279,7 @@ def predict_defect():
         file.save(filepath)
         
         # Make prediction
-        predictor = get_predictor()
+        predictor = get_models()
         result = predictor.predict(filepath)
         
         # Clean up
@@ -324,7 +345,7 @@ def detect_defect():
         file.save(filepath)
         
         # Make prediction with ENHANCED production parameters
-        predictor = get_predictor()
+        predictor = get_models()
         result = predictor.predict(
             filepath,
             machine_time=machine_time,
@@ -501,7 +522,7 @@ def detect_video():
         artificial_delay_ms = int(request.form.get('artificial_delay_ms', 0))  # Optional delay for testing
         
         # Process video
-        predictor = get_predictor()
+        predictor = get_models()
         result = predictor.process_video(video_filepath, output_folder, confidence_threshold, frame_interval, artificial_delay_ms)
         
         if result['status'] == 'success':
@@ -632,7 +653,7 @@ def predict_cost():
         defect_rate = float(data.get('defect_rate', 2))
         
         # Get cost prediction model
-        predictor = get_predictor()
+        predictor = get_models()
         if predictor.cost_model is None:
             return jsonify({
                 'status': 'error',
@@ -760,7 +781,7 @@ def health_check():
 @app.route('/api/models', methods=['GET'])
 def check_models():
     """Check if models are loaded"""
-    predictor = get_predictor()
+    predictor = get_models()
     
     return jsonify({
         'defect_model_loaded': predictor.cnn_model is not None,
@@ -869,9 +890,8 @@ if __name__ == '__main__':
         print(f"   [ERR] {models_path} NOT FOUND")
     print()
     
-    # Initialize models on startup
-    print("Loading ML models...")
-    predictor = get_predictor()
+    # Models will be loaded on first request (lazy initialization)
+    print("Models will be loaded on first request for faster startup...")
     print()
     
     print("=" * 60)
