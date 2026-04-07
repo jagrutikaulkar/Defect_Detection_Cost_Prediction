@@ -89,8 +89,14 @@ class Predictor:
             raw_img = cv2.resize(raw_img, (224, 224))
             gray = cv2.cvtColor(raw_img, cv2.COLOR_BGR2GRAY)
             
-            # Create binary mask (defect = white pixels)
-            thresh = cv2.threshold(gray, 120, 255, cv2.THRESH_BINARY)[1]
+            # Use adaptive thresholding for better defect detection
+            # This works better on images with varying lighting conditions
+            thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                          cv2.THRESH_BINARY, 11, 2)
+            
+            # If adaptive threshold gives poor results, fallback to Otsu's method
+            if np.sum(thresh == 255) < 100:
+                _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
             
             # Apply morphological operations for better segmentation
             kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
@@ -105,7 +111,17 @@ class Predictor:
             
             # Get bounding box of largest contour
             largest_contour = max(contours, key=cv2.contourArea)
+            contour_area = cv2.contourArea(largest_contour)
+            
+            # Filter out noise: ignore very small or very large contours
+            if contour_area < 50 or contour_area > 224 * 224 * 0.9:
+                return None
+            
             x, y, w, h = cv2.boundingRect(largest_contour)
+            
+            # Validate bounding box dimensions
+            if w < 5 or h < 5:
+                return None
             
             # Add padding (10% of dimensions)
             padding = 10
@@ -115,7 +131,8 @@ class Predictor:
             h = min(224 - y, h + padding * 2)
             
             return {'x': int(x), 'y': int(y), 'width': int(w), 'height': int(h)}
-        except:
+        except Exception as e:
+            print(f"⚠️  Error in find_defect_region: {str(e)}")
             return None
     
     def predict(self, image_path, machine_time=2.0, labor_cost=300.0, material_cost=200.0, energy_consumption=100.0, production_volume=1000):
@@ -157,6 +174,7 @@ class Predictor:
             
             # Find defect region (bounding box) - do this first
             bounding_box = None if is_normal else self.find_defect_region(image_path)
+            print(f"[DEBUG] is_normal={is_normal}, bounding_box={bounding_box}")
             
             # Feature extraction for cost prediction
             raw_img = cv2.imread(image_path)
@@ -168,17 +186,31 @@ class Predictor:
                 bbox_area = bounding_box['width'] * bounding_box['height']
                 total_area = 224 * 224  # Image is resized to 224x224
                 defect_area = (bbox_area / total_area) * 100
+                print(f"[DEBUG] Using bounding_box method: defect_area={defect_area}")
             else:
-                # Fallback: use morphologically processed binary image
+                # Fallback: use improved morphological approach with adaptive thresholding
                 gray = cv2.cvtColor(raw_img, cv2.COLOR_BGR2GRAY)
-                thresh = cv2.threshold(gray, 120, 255, cv2.THRESH_BINARY)[1]
+                
+                # Try adaptive threshold first (better for varying lighting)
+                thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                              cv2.THRESH_BINARY, 11, 2)
+                
+                # If adaptive threshold gives poor results, use Otsu's method
+                if np.sum(thresh == 255) < 100:
+                    _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+                
                 # Apply morphological operations
                 kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
                 thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
                 thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
+                
                 defect_pixels = np.sum(thresh == 255)
                 total_pixels = thresh.size
-                defect_area = (defect_pixels / total_pixels) * 100
+                
+                # Ensure minimum defect area for detected defects (at least 0.5%)
+                raw_area = (defect_pixels / total_pixels) * 100
+                defect_area = max(0.5, raw_area) if not is_normal else 0
+                print(f"[DEBUG] Using fallback method: defect_pixels={defect_pixels}, total_pixels={total_pixels}, raw_area={raw_area:.2f}, final_defect_area={defect_area}")
             
             # ✅ IMPROVED: Determine severity based on DEFECT AREA (industry standard)
             # This is more accurate than confidence-based severity
