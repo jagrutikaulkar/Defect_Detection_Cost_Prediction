@@ -33,7 +33,7 @@ ENV FLASK_ENV=production
 ENV FLASK_DEBUG=0
 ENV PORT=10000
 
-# Run the app with gunicorn (respects PORT env var)
+# Run the app with gunicorn (respects PORT env var from Render)
 # Note: Using single worker to minimize memory footprint for free tier
-# max-requests recycles worker to prevent memory leaks from model inference
-CMD exec gunicorn --bind 0.0.0.0:${PORT:-10000} --timeout 300 --workers 1 --worker-class=sync --max-requests=5 app:app
+# Render automatically sets PORT and WEB_CONCURRENCY environment variables
+CMD exec gunicorn --bind 0.0.0.0:${PORT:-10000} --timeout 300 --workers 1 --worker-class=sync app:app
