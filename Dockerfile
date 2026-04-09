@@ -34,4 +34,6 @@ ENV FLASK_DEBUG=0
 ENV PORT=10000
 
 # Run the app with gunicorn (respects PORT env var)
-CMD exec gunicorn --bind 0.0.0.0:${PORT:-10000} --timeout 300 --workers 2 app:app
+# Note: Using single worker to minimize memory footprint for free tier
+# max-requests recycles worker to prevent memory leaks from model inference
+CMD exec gunicorn --bind 0.0.0.0:${PORT:-10000} --timeout 300 --workers 1 --worker-class=sync --max-requests=5 app:app
