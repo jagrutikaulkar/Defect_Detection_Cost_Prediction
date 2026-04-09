@@ -1,5 +1,51 @@
 /* Main JavaScript */
 
+// ===== Responsive Menu Functions =====
+function toggleMobileMenu() {
+    const mobileNav = document.getElementById('mobileNav');
+    const hamburger = document.querySelector('.hamburger');
+    if (mobileNav && hamburger) {
+        mobileNav.classList.toggle('active');
+        hamburger.classList.toggle('active');
+    }
+}
+
+function closeMobileMenu() {
+    const mobileNav = document.getElementById('mobileNav');
+    const hamburger = document.querySelector('.hamburger');
+    if (mobileNav && hamburger) {
+        mobileNav.classList.remove('active');
+        hamburger.classList.remove('active');
+    }
+}
+
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+        sidebar.classList.toggle('active');
+    }
+}
+
+function closeSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+        sidebar.classList.remove('active');
+    }
+}
+
+// Close mobile menu when clicking on links
+document.addEventListener('DOMContentLoaded', function() {
+    const mobileNavLinks = document.querySelectorAll('.mobile-nav a');
+    mobileNavLinks.forEach(link => {
+        link.addEventListener('click', closeMobileMenu);
+    });
+    
+    const sidebarLinks = document.querySelectorAll('.sidebar a');
+    sidebarLinks.forEach(link => {
+        link.addEventListener('click', closeSidebar);
+    });
+});
+
 // Store token
 let authToken = null;
 

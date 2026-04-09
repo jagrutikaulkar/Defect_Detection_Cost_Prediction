@@ -11,6 +11,8 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
+    min-height: 44px;
+    touch-action: manipulation;
 }
 
 .btn:disabled {
@@ -37,6 +39,7 @@
     border-radius: 20px;
     font-size: 0.85rem;
     font-weight: 600;
+    touch-action: manipulation;
 }
 
 .badge-primary {
@@ -104,4 +107,18 @@
     background: #fef3c7;
     border-color: #f59e0b;
     color: #92400e;
+}
+
+/* Mobile responsive buttons */
+@media (max-width: 640px) {
+    .btn {
+        padding: 0.75rem 1.2rem;
+        font-size: 0.9rem;
+        min-height: 44px;
+    }
+    
+    .alert {
+        padding: 0.9rem 1rem;
+        font-size: 0.9rem;
+    }
 }

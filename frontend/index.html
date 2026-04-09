@@ -24,10 +24,24 @@
                 <a href="javascript:navigateToPage('cost-prediction.html')">Cost Prediction</a>
             </div>
             
+            <button class="hamburger" onclick="toggleMobileMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            
             <div class="nav-auth">
                 <button class="btn-login" onclick="showLogin()">Login</button>
                 <button class="btn-register" onclick="showRegister()">Register</button>
             </div>
+        </div>
+        
+        <!-- Mobile Navigation Menu -->
+        <div class="mobile-nav" id="mobileNav">
+            <a href="index.html" class="active" onclick="closeMobileMenu()">Home</a>
+            <a href="javascript:navigateToPage('dashboard.html')" onclick="closeMobileMenu()">Dashboard</a>
+            <a href="javascript:navigateToPage('defect-detection.html')" onclick="closeMobileMenu()">Defect Detection</a>
+            <a href="javascript:navigateToPage('cost-prediction.html')" onclick="closeMobileMenu()">Cost Prediction</a>
         </div>
     </nav>
     

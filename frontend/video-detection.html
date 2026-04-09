@@ -360,6 +360,13 @@
     </style>
 </head>
 <body>
+    <!-- Authentication check -->
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'index.html';
+        }
+    </script>
+    
     <!-- Navigation -->
     <nav class="navbar">
         <div class="nav-container">
@@ -375,9 +382,23 @@
                 <a href="cost-prediction.html">Cost Prediction</a>
             </div>
             
+            <button class="hamburger" onclick="toggleMobileMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            
             <div class="nav-auth">
                 <button class="btn-logout" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
             </div>
+        </div>
+        
+        <!-- Mobile Navigation Menu -->
+        <div class="mobile-nav" id="mobileNav">
+            <a href="index.html" onclick="closeMobileMenu()">Home</a>
+            <a href="dashboard.html" onclick="closeMobileMenu()">Dashboard</a>
+            <a href="defect-detection.html" onclick="closeMobileMenu()">Defect Detection</a>
+            <a href="cost-prediction.html" onclick="closeMobileMenu()">Cost Prediction</a>
         </div>
     </nav>
 
@@ -766,5 +787,6 @@
             window.location.href = 'index.html';
         }
     </script>
+    <script src="js/main.js"></script>
 </body>
 </html>
