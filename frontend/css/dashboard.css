@@ -10,10 +10,12 @@
 .sidebar {
     width: 260px;
     background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+    background-attachment: fixed;
     border-right: 3px solid #3b82f6;
     padding: 2.5rem 0;
     position: fixed;
     height: calc(100vh - 70px);
+    min-height: calc(100vh - 70px);
     overflow-y: auto;
     box-shadow: 4px 0 12px rgba(0, 0, 0, 0.15);
     z-index: 999;
@@ -1062,6 +1064,9 @@
     .sidebar {
         width: 100%;
         height: calc(100vh - 70px);
+        min-height: calc(100vh - 70px);
+        background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+        background-attachment: fixed;
         transform: translateX(-100%);
         position: fixed;
         top: 70px;
